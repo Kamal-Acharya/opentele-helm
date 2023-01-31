@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+ name: jaeger-all-in-one
+ labels:
+   {{- include "test1.mylabels" . | nindent 4 }}
+spec:
+  serviceName: "jaeger-headless"
+  replicas: {{ .Values.replicaCount }}
+  selector:
+   matchLabels:
+   {{- include "test1.mylabels" . | nindent 5 }}    
+  template:
+   metadata:
+     labels:
+       {{- include "test1.mylabels" . | nindent 8 }}
+   spec:
+     containers:
+       - image: {{ .Values.jager.repositry }}
+         name: jaeger
+         ports:
+          - containerPort: 16686
+          - containerPort: 14250
+          - containerPort: 4317
+         env:
+           {{- range $name, $value := .Values.env }}
+          - name: {{ $value.name  }}
+            value: {{ $value.value }}
+            {{- end }} 
+         volumeMounts:
+         - name: jaeger-pvc
+           mountPath: /badger
+  volumeClaimTemplates:
+  - metadata:
+      name: jaeger-pvc
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
