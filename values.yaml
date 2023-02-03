@@ -10,12 +10,41 @@ otel:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
   config:
-    data:
-       protocols:
+    receivers:
+      otlp:
+        protocols:
           grpc:
             endpoint: "0.0.0.0:4317"
           http:
-            endpoint: "0.0.0.0:4318"  
+            endpoint: "0.0.0.0:4318"
+    processors:
+      batch:
+      memory_limiter:
+        # 80% of maximum memory up to 2G
+        limit_mib: 1500
+        # 25% of limit up to 2G
+        spike_limit_mib: 512
+        check_interval: 5s
+    extensions:
+      zpages: {}
+      memory_ballast:
+        # Memory Ballast size should be max 1/3 to 1/2 of memory.
+        size_mib: 683
+    exporters:
+      logging:
+        loglevel: info
+      jaeger:
+        endpoint: jaeger-headless:14250
+        tls:
+          insecure: true
+    service:
+      extensions: [zpages, memory_ballast]
+      pipelines:
+        traces/1:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [logging, jaeger]
+   
 
 jager:
   repository: jaegertracing/all-in-one:latest
@@ -26,29 +55,10 @@ jager:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
-
 podAnnotations: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
 ports:
   - port: 16686
     name: web
@@ -74,7 +84,7 @@ env:
      value: "/badger/key"
 ingress:
   name: jager-query
-  enabled: true
+  enabled: false
   className: ngnix
   annotations: {}
     # kubernetes.io/ingress.class: nginx
@@ -113,6 +123,8 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+
+    
 nodeSelector: {}
 
 tolerations: []

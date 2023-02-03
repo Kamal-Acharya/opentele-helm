@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
- name: jaeger-all-in-one
+ name: {{ .Release.Name }}-jaeger-all-in-one
  labels:
    {{- include "test1.mylabels" . | nindent 4 }}
 spec:
-  serviceName: "jaeger-headless"
+  serviceName: {{ .Release.Name }}-jaeger-headless
   replicas: {{ .Values.replicaCount }}
   selector:
    matchLabels:

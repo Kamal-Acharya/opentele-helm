@@ -2,7 +2,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: optl
+ name: {{ .Release.Name }}-optl
+
  labels:
    {{- include "test1.newlabel" . | nindent 3 }}
 spec:
@@ -43,7 +44,7 @@ spec:
              mountPath: /conf
      volumes:
        - configMap:
-           name: optl-collector-config
+           name: {{ .Release.name }}-optl-collector-config
            items:
              - key: optl-collector-config
                path: optl-collector-config.yaml

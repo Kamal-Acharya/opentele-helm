@@ -1,11 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: jaeger-query
+  name: {{ $.Release.Name }}-query
   labels:
-   app: opentelemetry
-   component: optl-collector
-   name: jaeger
+  {{- include "test1.mylabels" . | nindent 3 }}
 spec:
   ports:
   - name: query-http
@@ -13,13 +11,13 @@ spec:
     protocol: TCP
   selector:
     {{- include "test1.mylabels" . | nindent 4 }}
-  type: NodePort
+  type: {{ .Values.service.type | default "ClusterIP" }}
   
 ---
 apiVersion: v1
 kind: Service
 metadata:
- name: otel
+ name: {{ $.Release.Name }}-otel
  labels:
    app: opentelemetry
    component: otel-collector
@@ -44,4 +42,26 @@ spec:
   #    targetPort: 13133
  selector:
    app: opentelemetry
-   name: optl    
+   name: optl  
+   
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-headless
+  namespace: opentelemetry
+  labels:
+   app: opentelemetry
+   component: optl-collector
+spec:
+  ports:
+  - port: 16686
+    name: web
+  - port: 14250
+    name: optl-connection
+  - port: 4317
+    name: grpc
+  clusterIP: None
+  selector:
+      {{- include "test1.mylabels" . | nindent 4 }} 
